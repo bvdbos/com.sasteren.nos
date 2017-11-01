@@ -5,8 +5,7 @@ const cheerio = require('cheerio');
 const Homey = require('homey');
 
 const BROADCAST_TITLES = [
-	'NOS Journaal', 'Nieuws in 60 seconden', 'Nieuwsuur', 'NOS Jeugdjournaal',
-	'NOS Sportjournaal', 'NOS Studio Voetbal', 'NOS Studio Sport Eredivisie'
+    'NOS Journaal', 'Nieuws in 60 seconden', 'Nieuwsuur', 'NOS Jeugdjournaal'
 ];
 
 class NOS extends Homey.App {
@@ -33,30 +32,36 @@ class NOS extends Homey.App {
 	}
 
 	updateBroadcasts() {
-		this.log('updateBroadcasts()');
-		return request.get('https://nos.nl/uitzendingen/')
-			.then(res => {
-				const $ = cheerio.load(res);
+        this.log('updateBroadcasts()');
+        return request.get('https://nos.nl/uitzendingen/')
+            .then(res => {
+                const $ = cheerio.load(res);
 
-				$('.broadcast-link').each((i, data) => {
+                $('.broadcast-link').each((i, data) => {
+                    request.get(`https://nos.nl${data.attribs.href}`)
+                        .then(videoRes => {
+                            let $ = cheerio.load(videoRes);
+                            $('source').each((j, test) => {
+                                if (test.attribs['data-label'] === 'Hoog - 720p') {
+                                    // Parse url, name and date from HTML
+                                    const name = $(data.children[0].children[1]).text();
+                                    const date = new Date(($(data.children[0].children[2]).attr('datetime').split('+')[0]) + 'Z');
+                                    const url = test.attribs.src.replace('https://', '');
 
-					// Parse url, name and date from HTML
-					const name = $(data.children[0].children[1]).text();
-					const date = new Date(($(data.children[0].children[2]).attr('datetime').split('+')[0]) + 'Z');
-					const videoId = data.attribs.href.split('/')[2].split('-')[0];
-					const videoDate = `${date.getFullYear()}/${("0" + (date.getMonth() + 1)).slice(-2)}/${("0" + date.getDate()).slice(-2)}`;
-					const url = `download.omroep.nl/nos/content/mp4/web02/${videoDate}/${videoId}/mp4_web02_backup.mp4`;
-console.log(url);
-					// If newer broadcast available, add it
-					if (typeof this.programMap[name].date === 'undefined' || this.programMap[name].date < date) {
-						this.programMap[name].url = url;
-						this.programMap[name].name = name;
-						this.programMap[name].date = date;
-						this.programMap[name].token.setValue(url);
-					}
-				});
-
-				return true;
+                                    if (!BROADCAST_TITLES.includes(name)) return;
+                                    // If newer broadcast available, add it
+                                    if (typeof this.programMap[name].date === 'undefined' || this.programMap[name].date < date) {
+                                        this.programMap[name].url = url;
+                                        this.programMap[name].name = name;
+                                        this.programMap[name].date = date;
+                                        this.programMap[name].token.setValue(url);
+                                    }
+                                    return;
+                                }
+                            })
+                        });
+                });
+                return true;
 			})
 			.catch(err => {
 				this.error('failed to update broadcasts', err);
