@@ -11,5 +11,6 @@ v 1.1.0 (1-11-17):
 * only 'NOS Journaal', 'Nieuws in 60 seconden', 'Nieuwsuur', 'NOS Jeugdjournaal', some streams are behind a geo-filter.  
 * Refactored some code...  
 * Dutch language  
+
 v 1.0.0 (31-10-2017):  
 initial commit
