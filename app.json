@@ -13,8 +13,9 @@
         "large": "assets/images/large.jpg",
         "small": "assets/images/small.jpg"
     },
+    "athomForumDiscussionId": 4106,	
     "category": "video",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "compatibility": ">=1.5.0",
     "author": {
         "name": "anonymous",
