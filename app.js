@@ -5,7 +5,7 @@ const cheerio = require('cheerio');
 const Homey = require('homey');
 
 const BROADCAST_TITLES = [
-    'NOS Journaal', 'Nieuws in 60 seconden', 'Nieuwsuur', 'NOS Jeugdjournaal'
+    'NOS Journaal', 'Nieuwsuur', 'NOS Jeugdjournaal', 'NOS het vragenuurtje', 'NOS Sportjournaal', 'NOS Studio Sport Eredivisie', 'NOS Studio Sport'
 ];
 
 class NOS extends Homey.App {
@@ -38,16 +38,20 @@ class NOS extends Homey.App {
                 const $ = cheerio.load(res);
 
                 $('.broadcast-link').each((i, data) => {
+
                     request.get(`https://nos.nl${data.attribs.href}`)
                         .then(videoRes => {
                             let $ = cheerio.load(videoRes);
                             $('source').each((j, test) => {
+								//this.log(test);
                                 if (test.attribs['data-label'] === 'Hoog - 720p') {
                                     // Parse url, name and date from HTML
-                                    const name = $(data.children[0].children[1]).text();
+                                    const name = $(data.children[0].children[1]).text().trim();
+									//this.log(name);
                                     const date = new Date(($(data.children[0].children[2]).attr('datetime').split('+')[0]) + 'Z');
+									//this.log(date);
                                     const url = test.attribs.src.replace('https://', '');
-
+									//this.log(url);
                                     if (!BROADCAST_TITLES.includes(name)) return;
                                     // If newer broadcast available, add it
                                     if (typeof this.programMap[name].date === 'undefined' || this.programMap[name].date < date) {
